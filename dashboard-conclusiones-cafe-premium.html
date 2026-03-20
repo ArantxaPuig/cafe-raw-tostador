@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Café Premium</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --cream: #F5F0E8;
+    --espresso: #1A1008;
+    --roast: #3D1F0A;
+    --caramel: #C27B3A;
+    --gold: #E8A832;
+    --mocha: #6B3A1F;
+    --latte: #D4A574;
+    --milk: #F9F3E8;
+    --ash: #8B7355;
+    --border: rgba(194, 123, 58, 0.2);
+    --card-bg: rgba(61, 31, 10, 0.4);
+    --text-muted: rgba(245, 240, 232, 0.5);
+  }
+
+  body {
+    background: var(--espresso);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    line-height: 1.6;
+    background-image: 
+      radial-gradient(ellipse at 20% 20%, rgba(99,47,15,0.4) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(61,31,10,0.6) 0%, transparent 60%);
+  }
+
+  .page { max-width: 1200px; margin: 0 auto; padding: 48px 32px; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 64px; position: relative; }
+  .header::before {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--caramel));
+    margin: 0 auto 24px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--caramel);
+    margin-bottom: 16px;
+    font-weight: 400;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 5vw, 60px);
+    font-weight: 400;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    color: var(--cream);
+  }
+  .header h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .header-sub {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--text-muted);
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .header-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 32px;
+    justify-content: center;
+  }
+  .header-divider span { width: 48px; height: 1px; background: var(--border); }
+  .header-divider .dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--caramel);
+    width: auto; height: auto;
+    font-size: 18px; color: var(--caramel);
+  }
+
+  /* KPI Strip */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 48px;
+  }
+  .kpi {
+    background: var(--espresso);
+    padding: 28px 24px;
+    text-align: center;
+    transition: background 0.2s;
+  }
+  .kpi:hover { background: var(--card-bg); }
+  .kpi-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 10px;
+  }
+  .kpi-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 400;
+    color: var(--cream);
+    line-height: 1;
+  }
+  .kpi-value .unit { font-size: 18px; color: var(--caramel); margin-right: 2px; }
+  .kpi-note { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+  /* Section titles */
+  .section { margin-bottom: 48px; }
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--cream);
+  }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+  .section-num {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--caramel);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    backdrop-filter: blur(8px);
+  }
+  .card-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ash);
+    margin-bottom: 20px;
+  }
+
+  /* Two-col layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+  /* Chart containers */
+  .chart-wrap { position: relative; height: 260px; }
+
+  /* Findings & Recommendations */
+  .findings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  
+  .finding-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    background: var(--card-bg);
+    position: relative;
+    overflow: hidden;
+  }
+  .finding-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--caramel);
+    border-radius: 3px 0 0 3px;
+  }
+  .finding-card.highlight::before { background: var(--gold); }
+  .finding-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    font-weight: 400;
+    color: rgba(194, 123, 58, 0.15);
+    line-height: 1;
+    position: absolute;
+    top: 12px; right: 20px;
+  }
+  .finding-tag {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--caramel);
+    margin-bottom: 10px;
+  }
+  .finding-card.highlight .finding-tag { color: var(--gold); }
+  .finding-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--cream);
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .finding-body {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* Rec cards */
+  .rec-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    background: var(--card-bg);
+  }
+  .rec-card.priority {
+    border-color: rgba(232, 168, 50, 0.4);
+    background: rgba(232, 168, 50, 0.05);
+  }
+  .rec-icon {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  .rec-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .rec-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: var(--cream);
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .rec-body { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+
+  /* Ranking list */
+  .rank-list { list-style: none; }
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(194,123,58,0.1);
+  }
+  .rank-item:last-child { border-bottom: none; }
+  .rank-pos {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--caramel);
+    width: 28px;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+  .rank-item:first-child .rank-pos { opacity: 1; color: var(--gold); }
+  .rank-name { flex: 1; font-size: 13px; color: var(--cream); }
+  .rank-bar-wrap { width: 100px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; }
+  .rank-bar { height: 100%; background: var(--caramel); border-radius: 2px; }
+  .rank-item:first-child .rank-bar { background: var(--gold); }
+  .rank-val { font-size: 12px; color: var(--ash); width: 56px; text-align: right; }
+
+  /* Canal vs canal */
+  .canal-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(194,123,58,0.1);
+  }
+  .canal-name { font-size: 13px; color: var(--cream); width: 80px; flex-shrink: 0; }
+  .canal-bars { flex: 1; }
+  .canal-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .canal-bar-label { font-size: 10px; color: var(--text-muted); width: 40px; }
+  .canal-bar-bg { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; }
+  .canal-bar-fill { height: 100%; border-radius: 3px; }
+  .canal-val { font-size: 12px; color: var(--ash); width: 24px; text-align: right; }
+
+  /* Process/tueste matrix */
+  .matrix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .matrix-table th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ash);
+    font-weight: 400;
+    padding: 0 12px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .matrix-table td {
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(194,123,58,0.08);
+    color: var(--cream);
+  }
+  .matrix-table tr:last-child td { border-bottom: none; }
+  .rating-stars { color: var(--gold); font-size: 12px; }
+  .rating-num { font-size: 13px; font-weight: 500; }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--ash);
+  }
+  .badge.best { border-color: rgba(232,168,50,0.4); color: var(--gold); background: rgba(232,168,50,0.08); }
+
+  /* Ticket medio */
+  .ticket-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .ticket-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+  .ticket-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--ash); margin-bottom: 8px; }
+  .ticket-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    color: var(--cream);
+  }
+  .ticket-val .cur { font-size: 18px; color: var(--caramel); }
+  .ticket-winner { border-color: rgba(232,168,50,0.4); background: rgba(232,168,50,0.04); }
+  .ticket-winner .ticket-label { color: var(--gold); }
+
+  /* Snob rec */
+  .snob-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 8px; }
+  .snob-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+  }
+  .snob-card:first-child { border-color: rgba(232,168,50,0.5); background: rgba(232,168,50,0.04); }
+  .snob-crown { font-size: 20px; display: block; margin-bottom: 8px; }
+  .snob-name { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--cream); margin-bottom: 4px; line-height: 1.3; }
+  .snob-rating { font-size: 12px; color: var(--gold); }
+  .snob-units { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Modelo relacional */
+  .model-box {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .model-header {
+    background: rgba(194,123,58,0.15);
+    padding: 8px 14px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--caramel);
+    font-weight: 400;
+  }
+  .model-fields { padding: 10px 14px; }
+  .model-field {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .model-field .pk { color: var(--gold); font-size: 10px; }
+  .model-field .fk { color: var(--latte); font-size: 10px; }
+  .model-cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+
+  /* Conclusions strip */
+  .conclusions {
+    margin-top: 64px;
+    border-top: 1px solid var(--border);
+    padding-top: 48px;
+  }
+  .conclusion-items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 32px; }
+  .conclusion-item { text-align: center; }
+  .conclusion-icon {
+    width: 48px; height: 48px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 18px;
+    background: var(--card-bg);
+  }
+  .conclusion-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--cream); margin-bottom: 8px; }
+  .conclusion-text { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+
+  /* Footer */
+  .footer {
+    margin-top: 64px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    padding-bottom: 32px;
+  }
+  .footer::before {
+    content: '';
+    display: block;
+    width: 32px; height: 1px;
+    background: var(--border);
+    margin: 0 auto 16px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col, .three-col, .findings-grid, .model-cols { grid-template-columns: 1fr; }
+    .conclusion-items { grid-template-columns: 1fr; }
+    .snob-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="header">
+    <p class="eyebrow"> Analisis del Equipo 2</p>
+    <h1>Proyecto de <em>Café Premium</em></h1>
+    <p class="header-sub">Conclusiones, hallazgos clave y recomendaciones para convertirnos en el distribuidor número uno de café de especialidad.</p>
+    <div class="header-divider">
+      <span></span>
+      <span class="dot">☕</span>
+      <span></span>
+    </div>
+  </header>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Facturación total</div>
+      <div class="kpi-value"><span class="unit">€</span>3.371,48</div>
+      <div class="kpi-note">Base de datos normalizada</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Ventas únicas</div>
+      <div class="kpi-value">98</div>
+      <div class="kpi-note">Operaciones registradas</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Registros totales</div>
+      <div class="kpi-value">119</div>
+      <div class="kpi-note">Tras normalización 3FN</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Ticket medio online</div>
+      <div class="kpi-value"><span class="unit">€</span>33,69</div>
+      <div class="kpi-note">vs €35,12 en tienda</div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 1: TOP CAFÉS & ZONAS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Rendimiento por café y zona</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="two-col">
+      <!-- Top 5 cafés -->
+      <div class="card">
+        <div class="card-title">Top 5 cafés por facturación</div>
+        <div class="chart-wrap">
+          <canvas id="chartCafes"></canvas>
+        </div>
+      </div>
+      <!-- Zonas -->
+      <div class="card">
+        <div class="card-title">Distribución por zona (facturación)</div>
+        <div class="chart-wrap">
+          <canvas id="chartZonas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: CANAL & TICKET MEDIO -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Canal de venta y ticket medio</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Ticket medio por canal</div>
+        <div class="ticket-compare">
+          <div class="ticket-box ticket-winner">
+            <div class="ticket-label">Tienda física</div>
+            <div class="ticket-val"><span class="cur">€</span>35,12</div>
+            <div style="font-size:11px;color:var(--gold);margin-top:6px;">↑ Canal premium</div>
+          </div>
+          <div class="ticket-box">
+            <div class="ticket-label">Online</div>
+            <div class="ticket-val"><span class="cur">€</span>33,69</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Volumen más alto</div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:16px;line-height:1.6;">La venta en tienda genera un ticket <strong style="color:var(--latte);font-weight:400;">de mas de un 4%</strong> respecto al ticket de venta online. </p>
+      </div>
+      <div class="card">
+        <div class="card-title">Formato más vendido</div>
+        <div class="chart-wrap" style="height:220px;">
+          <canvas id="chartFormato"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 3: VALORACIONES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Calidad percibida y valoraciones</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Top 3 cafés mejor valorados (mín. 3 reseñas)</div>
+        <ul class="rank-list" style="margin-top:8px;">
+          <li class="rank-item">
+            <span class="rank-pos">1</span>
+            <span class="rank-name">Etiopía Yirgacheffe</span>
+            <div class="rank-bar-wrap"><div class="rank-bar" style="width:100%"></div></div>
+            <span class="rank-val">5 ★</span>
+          </li>
+          <li class="rank-item">
+            <span class="rank-pos">2</span>
+            <span class="rank-name">Colombia Huila</span>
+            <div class="rank-bar-wrap"><div class="rank-bar" style="width:100%"></div></div>
+            <span class="rank-val">5 ★</span>
+          </li>
+          <li class="rank-item">
+            <span class="rank-pos">3</span>
+            <span class="rank-name">Kenia Nyeri</span>
+            <div class="rank-bar-wrap"><div class="rank-bar" style="width:85%"></div></div>
+            <span class="rank-val">4.7 ★</span>
+          </li>
+        </ul>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:16px;line-height:1.6;border-top:1px solid var(--border);padding-top:14px;">⚠️ <strong style="color:var(--latte);font-weight:400;">Limitación importante:</strong> las valoraciones mezclan experiencia en tienda y online con la propia valoración del café, siendo el contexto un factor de sesgo significativo. Los datos de calidad del café en sí mismos son poco fiables.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Proceso & nivel de tueste vs valoración media</div>
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>Proceso</th>
+              <th>Tueste</th>
+              <th>Valoración</th>
+              <th>Opiniones</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Lavado</td>
+              <td>Claro</td>
+              <td><span class="rating-num" style="color:var(--gold)">4,81</span></td>
+              <td>63</td>
+              <td><span class="badge best">Mejor combo</span></td>
+            </tr>
+            <tr>
+              <td>Lavado</td>
+              <td>Medio</td>
+              <td><span class="rating-num">5</span></td>
+              <td>28</td>
+              <td><span class="badge"></span></td>
+            </tr>
+            <tr>
+              <td>Honey</td>
+              <td>Medio-Oscuro</td>
+              <td><span class="rating-num">4,43</span></td>
+              <td>14</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>Natural</td>
+              <td>Medio</td>
+              <td><span class="rating-num">3,93</span></td>
+              <td>14</td>
+              <td></td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 4: RECOMENDACIÓN SNOB -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Recomendación para el cliente exigente</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Los 3 cafés premium — alto volumen + mejor valoración</div>
+      <div class="snob-grid">
+        <div class="snob-card">
+          <span class="snob-crown">👑</span>
+          <div class="snob-name">Etiopía Yirgacheffe</div>
+          <div class="snob-rating">★ 5  —  formato 250g</div>
+         
+        </div>
+        <div class="snob-card">
+          <span class="snob-crown" style="opacity:.5">✦</span>
+          <div class="snob-name">Colombia Huila</div>
+          <div class="snob-rating" style="color:var(--latte)">★ 5  —  formato 250g</div>
+         
+        </div>
+        <div class="snob-card">
+          <span class="snob-crown" style="opacity:.4">✦</span>
+          <div class="snob-name">Kenia Nyeri</div>
+          <div class="snob-rating" style="color:var(--latte)">★ 4,71  —  formato 250g</div>
+          
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:16px;line-height:1.6;">Estos tres orígenes combinan volumen de ventas con percepción de calidad alta. Son la carta de presentación ideal para posicionarse como referente premium frente a los grandes tostadores de cadena.</p>
+    </div>
+  </div>
+
+  <div class="conclusions">
+    <div style="text-align:center;">
+      <p class="eyebrow">Síntesis final</p>
+      <h2 class="section-title" style="font-size:28px;font-family:'Playfair Display',serif;font-weight:400;">Tres pilares para liderar el mercado premium</h2>
+    </div> 
+  
+  <!-- SECCIÓN 6: RECOMENDACIONES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num"></span>
+      <h2 class="section-title"></h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="three-col">
+      <div class="rec-card priority">
+        <div class="rec-label">Prioritario</div>
+        <div class="rec-title">Potenciar el canal online con productos exclusivos</div>
+        <div class="rec-body">El cliente online tiene un ticket menor respecto a los clientes que compran en tienda. Podemos crear estrategias de marketing o suscripciones premium disponibles solo online para elevar el ticket medio online y fidelizar.</div>
+      </div>
+      <div class="rec-card priority">
+        <div class="rec-label">Prioritario</div>
+        <div class="rec-title">Estandarizar el sistema de valoraciones</div>
+        <div class="rec-body">Disociar las valoraciones del canal de venta. Crear una escala estructurada que evalúe el café en sí (acidez, cuerpo, dulzor) independientemente del contexto de compra. Es un dato clave para decisiones de catálogo.</div>
+      </div>
+
+      <div class="rec-card">
+        <div class="rec-label">Datos</div>
+        <div class="rec-title">Auditar las inconsistencias de precio</div>
+        <div class="rec-body">Se detectaron precios inconsistentes para un mismo producto. Confirmar si responden a promociones documentadas o son errores en la captura del dato. Una base de precios fiable es crítica para análisis de rentabilidad.</div>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Alain · Arantxa P. · Carolina · Fran D. · Francisco J. · Graciela · Lucia L. · Lucia P. · Michelle · Oksana · Sara
+    </div>
+    <div style="text-align:center;">
+      <p class="eyebrow">Proyecto Café Premium · 2026</p>
+    <p class="eyebrow"> </p>
+</div>
+
+<script>
+// Palette
+const GOLD = '#E8A832';
+const CARAMEL = '#C27B3A';
+const LATTE = '#D4A574';
+const ASH = '#8B7355';
+const CREAM = '#F5F0E8';
+const CREAM_DIM = 'rgba(245,240,232,0.6)';
+const GRID_LINE = 'rgba(194,123,58,0.15)';
+
+const baseOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1A1008',
+      borderColor: 'rgba(194,123,58,0.3)',
+      borderWidth: 1,
+      titleColor: CREAM,
+      bodyColor: CREAM_DIM,
+      padding: 12
+    }
+  }
+};
+
+// Chart 1: Top 5 cafés
+new Chart(document.getElementById('chartCafes'), {
+  type: 'bar',
+  data: {
+    labels: ['Etiopia Yirgacheffe', 'Colombia Huila', 'Guatemala Antigua', 'Kenia Nyeri', 'Brasil Cerrado'],
+    datasets: [{
+      data: [896.37, 766.96, 508.80, 476.83, 395.94],
+      backgroundColor: [GOLD, CARAMEL, CARAMEL, CARAMEL, CARAMEL],
+      borderRadius: 4,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    ...baseOpts,
+    scales: {
+      x: {
+        ticks: { color: CREAM_DIM, font: { size: 11 }, maxRotation: 30 },
+        grid: { display: false },
+        border: { display: false }
+      },
+      y: {
+        ticks: { color: CREAM_DIM, font: { size: 11 }, callback: v => '€'+v },
+        grid: { color: GRID_LINE },
+        border: { display: false }
+      }
+    }
+  }
+});
+
+// Chart 2: Zonas (donut)
+new Chart(document.getElementById('chartZonas'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Oviedo', 'Villaviciosa', 'Gijón', 'Avilés', 'Nava', 'Pola de Lena'],
+    datasets: [{
+      data: [764, 722.44, 625.35, 515.84, 513.50, 230.35],
+      backgroundColor: [GOLD, CARAMEL, LATTE, ASH, '#5A3820', '#3D2210'],
+      borderWidth: 0,
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    ...baseOpts,
+    cutout: '65%',
+    plugins: {
+      ...baseOpts.plugins,
+      legend: {
+        display: true,
+        position: 'right',
+        labels: {
+          color: CREAM_DIM,
+          font: { size: 11 },
+          boxWidth: 10,
+          padding: 12
+        }
+      }
+    }
+  }
+});
+
+// Chart 3: Formato paquete
+new Chart(document.getElementById('chartFormato'), {
+  type: 'bar',
+  data: {
+    labels: ['250g', '500g', '1kg'],
+    datasets: [{
+      label: 'Unidades',
+      data: [84, 72, 67],
+      backgroundColor: [GOLD, CARAMEL, ASH],
+      borderRadius: 4,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    ...baseOpts,
+    indexAxis: 'y',
+    scales: {
+      x: {
+        ticks: { color: CREAM_DIM, font: { size: 11 } },
+        grid: { color: GRID_LINE },
+        border: { display: false }
+      },
+      y: {
+        ticks: { color: CREAM_DIM, font: { size: 12 } },
+        grid: { display: false },
+        border: { display: false }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
