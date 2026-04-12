@@ -26,25 +26,8 @@ El objetivo es practicar limpieza, transformación y análisis de datos aplicado
 - Extraer insights útiles del negocio
 - Simular un flujo real de analista de datos
 
----
-
-## 📂 Estructura del repositorio
-
-cafe-raw-tostador/
-│
-├── data/
-│ ├── raw/ # Datos originales sin procesar
-│ ├── clean/ # Datos limpios y tratados
-│ └── processed/ # Datos finales listos para análisis
-│
-├── notebooks/ # Análisis exploratorio (EDA)
-├── scripts/ # Scripts de limpieza y transformación
-├── outputs/ # Resultados, gráficos y exports
-└── README.md
-
 
 ---
-
 ## 🧠 Contenido trabajado
 
 - Limpieza de datos (nulos, duplicados, formatos)
